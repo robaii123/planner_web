@@ -1,22 +1,27 @@
-# Use Java 21 JDK image
-FROM eclipse-temurin:21-jdk
-
-# Set the working directory inside the container
+# ---------- Build stage ----------
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
-# Copy the Maven wrapper and pom.xml first (to cache dependencies)
-COPY mvnw .
-COPY .mvn .mvn
+# Copy pom first to cache deps
 COPY pom.xml .
+# Pre-download dependencies to speed up builds
+RUN mvn -B -q -e -DskipTests dependency:go-offline
 
-# Download dependencies (cached layer)
-RUN ./mvnw dependency:go-offline
-
-# Copy the rest of the project
+# Copy sources and build
 COPY src src
+RUN mvn -B -q clean package -DskipTests
 
-# Build the application
-RUN ./mvnw clean package -DskipTests
+# ---------- Runtime stage ----------
+FROM eclipse-temurin:21-jre
+WORKDIR /app
 
-# Run the Spring Boot app
-CMD ["java", "-Dserver.port=${PORT}", "-jar", "target/*.jar"]
+# copy built jar
+COPY --from=build /app/target/*.jar app.jar
+
+# Optional: use smaller heap in tiny instances
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+
+# Bind to Render's port
+CMD ["sh","-c","java -Dserver.port=${PORT:-8080} -jar app.jar"]
+
+
