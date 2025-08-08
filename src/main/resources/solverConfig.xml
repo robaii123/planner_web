@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<solver>
+    <solutionClass>com.example.planner_service.domain.TaskSchedule</solutionClass>
+    <entityClass>com.example.planner_service.domain.Task</entityClass>
+    <scoreDirectorFactory>
+        <constraintProviderClass>com.example.planner_service.domain.TaskConstraintProvider</constraintProviderClass>
+    </scoreDirectorFactory>
+    <termination>
+        <secondsSpentLimit>5</secondsSpentLimit>
+    </termination>
+</solver>
